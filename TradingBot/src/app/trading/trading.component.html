@@ -8,7 +8,7 @@
   <div class="container">
     <div class="row mt-4">
       <div class="col">
-        <button mat-raised-button color="primary">Start trading</button>
+        <button mat-raised-button color="primary" (click)="trade()">Start trading</button>
         <button mat-raised-button color="warn" (click)="cancelOrders()">Cancel open orders</button>
         <button mat-raised-button color="warn">Cancel and sell</button>
       </div>

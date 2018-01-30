@@ -14,13 +14,20 @@ export class Order {
     fee: number;
 }
 
-export interface Balance {
+export class Balance {
     free: number;
     used: number;
     total: number;
 }
 
-export interface Balances {
+export class Balances {
     info: any;
     [key: string]: Balance;
+}
+
+export class Strategy {
+    buyAtPercentIncrease: number;
+    amount: number;
+    sellAtPercentIncrease: number;
+    currencyPair: string;
 }

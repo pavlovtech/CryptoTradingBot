@@ -82,17 +82,24 @@ app.get('/balances', async (req, res) => {
 
 app.post('commands/buy-and-sell', async (req, res) => {
     let buyAtPercentIncrease = req.params.buyAt;
-    let buyAmount = req.params.buyAmount;
+    let amount = req.params.amount;
     let sellAtPercentIncrease = req.params.sellAt;
     let currencyPair = req.params.currencyPair.replace('_', '/').toUpperCase();;
 
     let ticker = await yobitClient.fetchTicker(currencyPair);
     let buyPrice = (1.0 + buyAtPercentIncrease) * ticker.last;
     let orderBooks = await yobitClient.fetchOrderBook(pair);
-    let fittingSellingOrders = orderBooks.asks.map(buyingOrder => buyingOrder[0]).filter(ask => ask <= buyPrice && ask >= buyAmount);
+    let fittingSellingOrders = orderBooks.asks.map(buyingOrder => buyingOrder[0]).filter(ask => ask <= buyPrice && ask >= amount);
     let cheapestOrderPrice = Math.min(...fittingOrders);
-    let result = await yobitClient.createOrder(currencyPair, 'limit', 'buy', buyAmount, cheapestOrderPrice);
-    console.log(result);
+    console.log(`Buying... price: ${cheapestOrderPrice}`);
+    let buyResult = await yobitClient.createOrder(currencyPair, 'limit', 'buy', amount, cheapestOrderPrice);
+    console.log(buyResult);
+
+    console.log(`Selling... price: ${sellPrice}`);
+    let sellPrice = (1.0 + sellAtPercentIncrease) * ticker.last;
+    let sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', amount, sellPrice);
+
+    console.log(sellResult);
 });
 
 // app.get('/currency-pairs/lookup/:q', async (req, res) => {

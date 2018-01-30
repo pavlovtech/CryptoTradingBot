@@ -3,7 +3,7 @@ import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs/Observable';
 import { startWith, map, debounceTime } from 'rxjs/operators';
 import { ExchangeService } from '../shared/exchange.service';
-import { Order } from '../data-model';
+import { Order, Strategy } from '../data-model';
 
 @Component({
   selector: 'app-trading',
@@ -28,6 +28,15 @@ export class TradingComponent implements OnInit {
     if (!this.currencyPair.value) { return; }
 
     this.exchangeService.cancelOrders(this.currencyPair.value.replace('/', '_'));
+  }
+
+  trade() {
+    if (!this.currencyPair.value) { return; }
+
+    const strategy = new Strategy();
+    //strategy.amount = 
+
+    //this.exchangeService.buyAndSell();
   }
 
   refreshOrders() {
