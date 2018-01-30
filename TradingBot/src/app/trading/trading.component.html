@@ -1,0 +1,39 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<div style="text-align:center">
+    <h1>
+      {{ title }}!
+    </h1>
+  </div>
+  
+  <div class="container">
+    <div class="row mt-4">
+      <div class="col">
+        <button mat-raised-button color="primary">Start trading</button>
+        <button mat-raised-button color="warn" (click)="cancelOrders()">Cancel open orders</button>
+        <button mat-raised-button color="warn">Cancel and sell</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col mt-4">
+        <mat-form-field>
+          <input type="text" placeholder="Pick currency pair" matInput [formControl]="currencyPair" [matAutocomplete]="auto">
+          <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+              {{ option }}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col mt-3">
+        <app-strategy></app-strategy>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col mt-3">
+        <app-order-list orders="orders"></app-order-list>
+        <button class="mt-3" mat-raised-button (click)="refreshOrders()">Refresh orders</button>
+      </div>
+    </div>
+  </div>
