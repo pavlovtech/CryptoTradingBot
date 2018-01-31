@@ -1,1 +1,1 @@
-ng server
+ng serve

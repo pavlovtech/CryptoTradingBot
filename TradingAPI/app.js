@@ -2,7 +2,7 @@ let ccxt = require('ccxt');
 let express = require('express');
 let bodyParser = require('body-parser');
 let path = require('path');
-var cors = require('cors');
+let cors = require('cors');
 
 let app = express();
 
@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({exdended: false}));
 
 const yobitClient = new ccxt.yobit({
     apiKey: 'FDE6120BA3AB897F517D3651FC98DF29',
-    secret: '1e8a385fe5ede0891f607109978d9f82',
+    secret: '1e8a385fe5ede0891f607109978d9f82'
 });
 
 
@@ -52,8 +52,8 @@ app.get('/open-orders/:currency_pair', async (req, res) => {
     res.json(orders);
 });
 
-app.post('/orders-cancellation/:currency_pair', async (req, res) => {
-    let pair = req.params.currency_pair.replace('_', '/').toUpperCase();
+app.post('/orders-cancellation', async (req, res) => {
+    let pair = req.body.currencyPair;//.replace('_', '/').toUpperCase();
     let orders = await yobitClient.fetchOpenOrders(pair);
 
     orders.forEach(async element => {
@@ -80,17 +80,17 @@ app.get('/balances', async (req, res) => {
     res.json(balances);
 });
 
-app.post('commands/buy-and-sell', async (req, res) => {
-    let buyAtPercentIncrease = req.params.buyAt;
-    let amount = req.params.amount;
-    let sellAtPercentIncrease = req.params.sellAt;
-    let currencyPair = req.params.currencyPair.replace('_', '/').toUpperCase();;
+app.post('/commands/buy-and-sell', async (req, res) => {
+    let buyAtPercentIncrease = req.body.buyAt;
+    let amount = req.body.amount;
+    let sellAtPercentIncrease = req.body.sellAt;
+    let currencyPair = req.body.currencyPair;//.replace('_', '/').toUpperCase();;
 
     let ticker = await yobitClient.fetchTicker(currencyPair);
     let buyPrice = (1.0 + buyAtPercentIncrease) * ticker.last;
-    let orderBooks = await yobitClient.fetchOrderBook(pair);
+    let orderBooks = await yobitClient.fetchOrderBook(currencyPair);
     let fittingSellingOrders = orderBooks.asks.map(buyingOrder => buyingOrder[0]).filter(ask => ask <= buyPrice && ask >= amount);
-    let cheapestOrderPrice = Math.min(...fittingOrders);
+    let cheapestOrderPrice = Math.min(...fittingSellingOrders);
     console.log(`Buying... price: ${cheapestOrderPrice}`);
     let buyResult = await yobitClient.createOrder(currencyPair, 'limit', 'buy', amount, cheapestOrderPrice);
     console.log(buyResult);
@@ -100,6 +100,8 @@ app.post('commands/buy-and-sell', async (req, res) => {
     let sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', amount, sellPrice);
 
     console.log(sellResult);
+
+    res.sendStatus(200)
 });
 
 // app.get('/currency-pairs/lookup/:q', async (req, res) => {

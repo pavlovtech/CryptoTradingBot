@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs/Observable';
-import { Order, Balances, Strategy } from '../data-model';
+import { Order, Balances, BuyAndSellRequest } from '../data-model';
 
 @Injectable()
 export class ExchangeService {
@@ -14,7 +14,9 @@ export class ExchangeService {
   }
 
   cancelOrders(currencyPair: string) {
-    return this.http.post(`${this.host}/orders-cancellation/${currencyPair}`, '');
+    return this.http.post(`${this.host}/orders-cancellation/`, {
+      currencyPair: currencyPair
+    });
   }
 
   getOrders(currencyPair: string): Observable<Order[]> {
@@ -25,7 +27,7 @@ export class ExchangeService {
     return this.http.get<Balances>(`${this.host}/balances`);
   }
 
-  buyAndSell(strategy: Strategy): Observable<any> {
+  buyAndSell(strategy: BuyAndSellRequest): Observable<any> {
     return this.http.post(`${this.host}/commands/buy-and-sell`, strategy);
   }
 }

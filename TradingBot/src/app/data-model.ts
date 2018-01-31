@@ -25,7 +25,7 @@ export class Balances {
     [key: string]: Balance;
 }
 
-export class Strategy {
+export class BuyAndSellRequest {
     buyAtPercentIncrease: number;
     amount: number;
     sellAtPercentIncrease: number;

@@ -3,7 +3,8 @@ import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs/Observable';
 import { startWith, map, debounceTime } from 'rxjs/operators';
 import { ExchangeService } from '../shared/exchange.service';
-import { Order, Strategy } from '../data-model';
+import { Order, BuyAndSellRequest } from '../data-model';
+import { TradingStrategy } from '../strategy/trading-strategy.model';
 
 @Component({
   selector: 'app-trading',
@@ -13,6 +14,8 @@ import { Order, Strategy } from '../data-model';
 export class TradingComponent implements OnInit {
 
   title = 'Pump and dump trading bot';
+
+  tradingStrategy: TradingStrategy;
 
   currencyPair: FormControl = new FormControl();
 
@@ -27,16 +30,22 @@ export class TradingComponent implements OnInit {
   cancelOrders() {
     if (!this.currencyPair.value) { return; }
 
-    this.exchangeService.cancelOrders(this.currencyPair.value.replace('/', '_'));
+    this.exchangeService.cancelOrders(this.currencyPair.value);
   }
 
   trade() {
     if (!this.currencyPair.value) { return; }
 
-    const strategy = new Strategy();
-    //strategy.amount = 
+    const request = new BuyAndSellRequest();
+    request.amount = this.tradingStrategy.amount;
+    request.buyAtPercentIncrease = this.tradingStrategy.buyAtPercentIncrease;
+    request.sellAtPercentIncrease = this.tradingStrategy.sellAtPercentIncrease;
 
-    //this.exchangeService.buyAndSell();
+    request.currencyPair = this.currencyPair.value;
+
+    this.exchangeService.buyAndSell(request).subscribe(x => {
+      console.log(x);
+    });
   }
 
   refreshOrders() {
@@ -45,6 +54,10 @@ export class TradingComponent implements OnInit {
     this.exchangeService.getOrders(this.currencyPair.value).subscribe(result => {
       this.orders = result;
     });
+  }
+
+  onStrategyChanged(strategy: TradingStrategy) {
+    this.tradingStrategy = strategy;
   }
 
   filter(val: string): string[] {
