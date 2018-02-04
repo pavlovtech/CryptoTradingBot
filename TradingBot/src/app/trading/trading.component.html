@@ -9,6 +9,7 @@
     <div class="row mt-4">
       <div class="col">
         <button mat-raised-button color="primary" (click)="trade()">Start trading</button>
+        <button mat-raised-button color="primary" (click)="updateBalance()">Update balance</button>
         <button mat-raised-button color="warn" (click)="cancelOrders()">Cancel open orders</button>
         <button mat-raised-button color="warn">Cancel and sell</button>
       </div>
@@ -23,6 +24,8 @@
             </mat-option>
           </mat-autocomplete>
         </mat-form-field>
+        <div *ngIf="currencyPair.value">Balance: {{ currentBalance }}</div>
+        <div *ngIf="currencyPair.value">Max amount to buy: {{ maxAmountToBuy }}</div>
       </div>
     </div>
     <div class="row">

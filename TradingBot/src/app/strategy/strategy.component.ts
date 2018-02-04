@@ -17,8 +17,8 @@ export class StrategyComponent implements OnInit {
     this.strategyForm.valueChanges
       .subscribe(value => {
         const strategy = new TradingStrategy(
-          this.strategyForm.get('volume').value,
           this.strategyForm.get('buyAt').value,
+          this.strategyForm.get('volume').value,
           this.strategyForm.get('sellAt').value);
         this.strategyChanged.emit(strategy);
       });

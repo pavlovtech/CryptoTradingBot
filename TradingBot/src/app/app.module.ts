@@ -10,7 +10,8 @@ import {
   MatToolbarModule,
   MatCardModule,
   MatIconModule,
-  MatTableModule
+  MatTableModule,
+  MatSnackBarModule
 } from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -42,7 +43,8 @@ import { OrderListComponent } from './order-list/order-list.component';
     BrowserAnimationsModule,
     MatTableModule,
     ReactiveFormsModule,
-    HttpClientModule
+    HttpClientModule,
+    MatSnackBarModule
   ],
   providers: [ExchangeService],
   bootstrap: [AppComponent]
