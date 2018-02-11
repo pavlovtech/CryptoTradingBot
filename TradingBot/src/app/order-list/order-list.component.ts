@@ -8,13 +8,12 @@ import { OnChanges } from '@angular/core/src/metadata/lifecycle_hooks';
   templateUrl: './order-list.component.html',
   styleUrls: ['./order-list.component.css']
 })
-export class OrderListComponent implements OnInit, OnChanges {
+export class OrderListComponent implements OnInit {
   @Input() set orders(value: Order[]) {
-    this.dataSource.data = this.orders;
+    this.dataSource.data = value;
   }
 
   displayedColumns = [
-    'id',
     'datetime',
     'status',
     'symbol',
@@ -34,9 +33,4 @@ export class OrderListComponent implements OnInit, OnChanges {
 
   ngOnInit() {
   }
-
-  ngOnChanges(changes: SimpleChanges) {
-    console.log(changes);
-  }
-
 }

@@ -42,14 +42,9 @@ export class TradingComponent implements OnInit {
   cancelOrders() {
     if (!this.currencyPair.value) { return; }
 
-    this.exchangeService.cancelOrders(this.currencyPair.value)
-    .pipe(
-      catchError(errorResponse => {
-        this.snackBar.open(errorResponse.error, 'Error');
-        this.refreshOrders();
-        return Observable.empty();
-      })
-    );
+    this.exchangeService.cancelOrders(this.currencyPair.value).subscribe(() => {
+      this.refreshOrders();
+    });
   }
 
   trade() {
@@ -129,6 +124,8 @@ export class TradingComponent implements OnInit {
               this.snackBar.open(errorResponse.error, 'Error');
               this.refreshOrders();
             });
+
+            this.refreshOrders();
           },
           errorResponse => {
             this.snackBar.open(errorResponse.error, 'Error');

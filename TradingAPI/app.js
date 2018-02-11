@@ -30,57 +30,60 @@ yobitClient.loadMarkets().then((availableMarkets) => {
     markets = availableMarkets;
 });
 
-app.get('/markets', async (req, res) => {
+app.get('/markets',  asyncMiddleware(async (req, res) => {
     res.json(markets);
-});
+}));
 
-app.get('/currency-pairs', async (req, res) => {
+app.get('/currency-pairs', asyncMiddleware(async (req, res) => {
     var keys = Object.keys(markets)
     res.json(keys);
-});
+}));
 
-app.get('/order-books/:currency_pair', async (req, res) => {
+app.get('/order-books/:currency_pair', asyncMiddleware(async (req, res) => {
     let pair = req.params.currency_pair.replace('_', '/').toUpperCase();
     let orderBooks = await yobitClient.fetchOrderBook(pair);
     res.json(orderBooks);
-});
+}));
 
 // personal orders
-app.get('/orders/:currency_pair', async (req, res) => {
-    let pair = req.params.currency_pair.replace('_', '/').toUpperCase();
-    let orders = await yobitClient.fetchOrders(pair);
-    res.json(orders);
-});
-
-// personal open orders
-app.get('/open-orders/:currency_pair', async (req, res) => {
+app.get('/orders/:currency_pair', asyncMiddleware(async (req, res) => {
     let pair = req.params.currency_pair.replace('_', '/').toUpperCase();
     let orders = await yobitClient.fetchOpenOrders(pair);
     res.json(orders);
-});
+}));
 
-app.post('/orders-cancellation', async (req, res) => {
+// personal open orders
+app.get('/open-orders/:currency_pair', asyncMiddleware(async (req, res) => {
+    let pair = req.params.currency_pair.replace('_', '/').toUpperCase();
+    let orders = await yobitClient.fetchOpenOrders(pair);
+    res.json(orders);
+}));
+
+app.post('/orders-cancellation', asyncMiddleware(async (req, res) => {
     let pair = req.body.currencyPair; //.replace('_', '/').toUpperCase();
     let orders = await yobitClient.fetchOpenOrders(pair);
 
+    let responses = [];
     orders.forEach(async element => {
-        await yobitClient.cancelOrder(element.id);
+        responses += await yobitClient.cancelOrder(element.id);
     });
-});
 
-app.get('/ticker/:currency_pair', async (req, res) => {
+    res.json(responses);
+}));
+
+app.get('/ticker/:currency_pair',  asyncMiddleware(async (req, res) => {
     let pair = req.params.currency_pair.replace('_', '/').toUpperCase();
     let ticker = await yobitClient.fetchTicker(pair);
 
     res.json(ticker);
-});
+}));
 
-app.get('/trades/:currency_pair', async (req, res) => {
+app.get('/trades/:currency_pair', asyncMiddleware(async (req, res) => {
     let pair = req.params.currency_pair.replace('_', '/').toUpperCase();
     let ticker = await yobitClient.fetchTrades(pair);
 
     res.json(ticker);
-});
+}));
 
 app.get('/balances', asyncMiddleware(async (req, res) => {
     let balances = await yobitClient.fetchBalance();
@@ -113,10 +116,10 @@ app.post('/commands/buy-and-sell', asyncMiddleware(async (req, res) => {
     let buyResult = await yobitClient.createOrder(currencyPair, 'limit', 'buy', amount, cheapestOrderPrice);
     console.log(buyResult);
 
-    let order = await yobitClient.fetchOrder(buyResult.id);
-    while (order.remaining != 0) {
+    while (true) {
         try {
             order = await yobitClient.fetchOrder(buyResult.id);
+            if (order.remaining == 0) break;
         } catch (err) {
             console.log(err);
         }
@@ -127,48 +130,33 @@ app.post('/commands/buy-and-sell', asyncMiddleware(async (req, res) => {
     let sellAmount = order.amount;
     let sellPrice = ((100 + sellAtPercentIncrease) * ticker.last) / 100;
 
-    orderBooks = await yobitClient.fetchOrderBook(currencyPair);
-
-    let fittingBuyingOrders = [];
-    while (fittingBuyingOrders.length == 0) {
-        try {
-            fittingBuyingOrders =
-                        orderBooks.bids
-                        .filter(buyingOrder => buyingOrder[0] >= sellPrice && buyingOrder[1] >= amount)
-                        .map(buyingOrder => buyingOrder[0]);
-
-            await sleep(1000);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-
-    let highestOrderPrice = Math.max(...fittingSellingOrders);
+    console.log(`Selling... price: ${sellPrice}`);
 
     let sellResult;
     while (true) {
         try {
-            console.log(`Selling... price: ${highestOrderPrice}`);
-            sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', sellAmount, highestOrderPrice);
-            await sleep(1000);
-            if(sellResult.remaining == 0) break;
-
-            console.log(sellResult);
+            sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', sellAmount, sellPrice);
+            break;
         } catch (err) {
             console.log(err);
         }
+
+        await sleep(1000);
     }
 
+    console.log(sellResult);
     res.json(sellResult.funds);
 }));
 
 app.use(function (err, req, res, next) {
     console.error(err);
-    console.error(err.statusCode);
 
-    if (err.statusCode == 500) {
-        res.status(500).send(err);
+    if (err.statusCode) {
+        console.error(err.statusCode);
+
+        if (err.statusCode == 500) {
+            res.status(500).send(err);
+        }
     }
 
     let rawStr = err.message;

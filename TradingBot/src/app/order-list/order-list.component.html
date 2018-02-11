@@ -1,6 +1,6 @@
 <mat-card>
   <mat-card-title>
-    Orders
+    Open orders
   </mat-card-title>
   <mat-card-content>
     <div class="example-container mat-elevation-z8">
@@ -9,63 +9,58 @@
         <!--- Note that these columns can be defined in any order.
               The actual rendered columns are set as a property on the row definition" -->
     
-        <ng-container matColumnDef="id">
-          <mat-header-cell *matHeaderCellDef> id </mat-header-cell>
-          <mat-cell *matCellDef="let order"> {{order.id}} </mat-cell>
-        </ng-container>
-    
         <ng-container matColumnDef="datetime">
-          <mat-header-cell *matHeaderCellDef> type </mat-header-cell>
-          <mat-cell *matCellDef="let order"> {{order.datetime}} </mat-cell>
+          <mat-header-cell *matHeaderCellDef> Date </mat-header-cell>
+          <mat-cell *matCellDef="let order"> {{order.datetime | date}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="status">
-          <mat-header-cell *matHeaderCellDef> status </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.status}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="symbol">
-          <mat-header-cell *matHeaderCellDef> symbol </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Symbol </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.symbol}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="type">
-          <mat-header-cell *matHeaderCellDef> type </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Type </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.type}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="side">
-          <mat-header-cell *matHeaderCellDef> side </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Side </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.side}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="price">
-          <mat-header-cell *matHeaderCellDef> price </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Price </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.price}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="cost">
-          <mat-header-cell *matHeaderCellDef> cost </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Cost </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.cost}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="amount">
-          <mat-header-cell *matHeaderCellDef> amount </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Amount </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.amount}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="filled">
-          <mat-header-cell *matHeaderCellDef> filled </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Filled </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.filled}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="remaining">
-          <mat-header-cell *matHeaderCellDef> remaining </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Remaining </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.remaining}} </mat-cell>
         </ng-container>
     
         <ng-container matColumnDef="fee">
-          <mat-header-cell *matHeaderCellDef> fee </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef> Fee </mat-header-cell>
           <mat-cell *matCellDef="let order"> {{order.fee}} </mat-cell>
         </ng-container>
     
