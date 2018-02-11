@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs/Observable';
-import { Order, Balances, BuyAndSellRequest } from '../data-model';
+import { Order, Balances, BuyAndSellRequest, Ticker } from '../data-model';
 
 @Injectable()
 export class ExchangeService {
@@ -25,6 +25,10 @@ export class ExchangeService {
 
   getBalances(): Observable<Balances> {
     return this.http.get<Balances>(`${this.host}/balances`);
+  }
+
+  getTicker(currencyPair: string): Observable<Ticker> {
+    return this.http.get<Ticker>(`${this.host}/ticker/${currencyPair}`);
   }
 
   buyAndSell(strategy: BuyAndSellRequest): Observable<any> {

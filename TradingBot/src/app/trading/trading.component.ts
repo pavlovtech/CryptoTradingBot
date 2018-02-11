@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs/Observable';
 import { startWith, map, debounceTime, tap, catchError } from 'rxjs/operators';
 import { ExchangeService } from '../shared/exchange.service';
-import { Order, BuyAndSellRequest } from '../data-model';
+import { Order, BuyAndSellRequest, Balance, Balances } from '../data-model';
 import { TradingStrategy } from '../strategy/trading-strategy.model';
 import { MatSnackBar } from '@angular/material';
 import { errorHandler } from '@angular/platform-browser/src/browser';
 import 'rxjs/add/observable/empty';
+import { StrategyComponent } from '../strategy/strategy.component';
 
 @Component({
   selector: 'app-trading',
@@ -15,6 +16,9 @@ import 'rxjs/add/observable/empty';
   styleUrls: ['./trading.component.css']
 })
 export class TradingComponent implements OnInit {
+
+  @ViewChild(StrategyComponent)
+  private strategyComponent: StrategyComponent;
 
   title = 'Pump and dump trading bot';
 
@@ -76,23 +80,16 @@ export class TradingComponent implements OnInit {
     });
   }
 
-  updateBalance() {
-    this.exchangeService.getBalances().subscribe(response => {
+  updateBalance(balances: Balances) {
+    const mainCryptocurrency = this.currencyPair.value.split('/')[1];
 
-      const mainCryptocurrency = this.currencyPair.value.split('/')[0];
+    let balance =  0;
 
-      let balance =  0;
+    if (balances[mainCryptocurrency]) {
+      balance = balances[mainCryptocurrency].free;
+    }
 
-      if (response[mainCryptocurrency]) {
-        balance = response[mainCryptocurrency].total;
-      }
-
-      this.currentBalance = `${balance.toString()} ${mainCryptocurrency}`;
-    },
-    errorResponse => {
-      this.snackBar.open(errorResponse.error, 'Error');
-      this.refreshOrders();
-    });
+    this.currentBalance = `${balance.toString()} ${mainCryptocurrency}`;
   }
 
   onStrategyChanged(strategy: TradingStrategy) {
@@ -101,6 +98,10 @@ export class TradingComponent implements OnInit {
 
   filter(val: string): string[] {
     return this.currencyPairs.filter(option => option.includes(val.toUpperCase())).slice(0, 500);
+  }
+
+  updateVolume() {
+    this.strategyComponent.strategyForm.get('volume').setValue(this.maxAmountToBuy);
   }
 
   ngOnInit() {
@@ -112,7 +113,27 @@ export class TradingComponent implements OnInit {
     this.filteredOptions = this.currencyPair.valueChanges
       .pipe(
         tap(val => {
-          this.updateBalance();
+          if (!this.currencyPairs.includes(val)) {
+            return;
+          }
+
+          this.exchangeService.getBalances().subscribe(balances => {
+            this.updateBalance(balances);
+
+            this.exchangeService.getTicker(val.replace('/', '_')).subscribe(t => {
+                const mainCryptocurrency = val.split('/')[1];
+
+                this.maxAmountToBuy = balances[mainCryptocurrency].free / t.average;
+            },
+            errorResponse => {
+              this.snackBar.open(errorResponse.error, 'Error');
+              this.refreshOrders();
+            });
+          },
+          errorResponse => {
+            this.snackBar.open(errorResponse.error, 'Error');
+            this.refreshOrders();
+          });
         }),
         map(val => this.filter(val),
       ));

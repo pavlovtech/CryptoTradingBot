@@ -31,8 +31,8 @@ export class StrategyComponent implements OnInit {
   createForm() {
     this.strategyForm = this.fb.group({
       volume: '',
-      buyAt: '',
-      sellAt: ''
+      buyAt: '5',
+      sellAt: '30'
     });
   }
 }

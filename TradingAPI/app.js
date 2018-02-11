@@ -9,7 +9,9 @@ let app = express();
 app.use(cors());
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ exdended: false }));
+app.use(bodyParser.urlencoded({
+    exdended: false
+}));
 
 const asyncMiddleware = fn =>
     (req, res, next) => {
@@ -58,7 +60,7 @@ app.get('/open-orders/:currency_pair', async (req, res) => {
 });
 
 app.post('/orders-cancellation', async (req, res) => {
-    let pair = req.body.currencyPair;//.replace('_', '/').toUpperCase();
+    let pair = req.body.currencyPair; //.replace('_', '/').toUpperCase();
     let orders = await yobitClient.fetchOpenOrders(pair);
 
     orders.forEach(async element => {
@@ -86,44 +88,77 @@ app.get('/balances', asyncMiddleware(async (req, res) => {
 }));
 
 app.post('/commands/buy-and-sell', asyncMiddleware(async (req, res) => {
-    // TODO: check selling or buying order should be specified
-
     let buyAtPercentIncrease = parseFloat(req.body.buyAtPercentIncrease);
     let amount = parseFloat(req.body.amount);
     let sellAtPercentIncrease = parseFloat(req.body.sellAtPercentIncrease);
-    let currencyPair = req.body.currencyPair;//.replace('_', '/').toUpperCase();;
+    let currencyPair = req.body.currencyPair; //.replace('_', '/').toUpperCase();;
 
     let ticker = await yobitClient.fetchTicker(currencyPair);
-    let buyPrice = ((100 + buyAtPercentIncrease) * ticker.last) / 100;
+    let buyPrice = ((100 + buyAtPercentIncrease) * ticker.ask) / 100;
+
     let orderBooks = await yobitClient.fetchOrderBook(currencyPair);
 
     let fittingSellingOrders =
         orderBooks.asks
-            .filter(buyingOrder => buyingOrder[0] <= buyPrice && buyingOrder[1] >= amount)
-            .map(buyingOrder => buyingOrder[0]);
+        .filter(sellingOrder => sellingOrder[0] <= buyPrice && sellingOrder[1] >= amount)
+        .map(sellingOrder => sellingOrder[0]);
+
+    if (fittingSellingOrders.length == 0) {
+        res.status(500).send(`No selling orders for price ${ buyPrice } and amount ${amount}`);
+    }
 
     let cheapestOrderPrice = Math.min(...fittingSellingOrders);
 
     console.log(`Buying... price: ${cheapestOrderPrice}`);
-    let buyResult;
-    if(cheapestOrderPrice) {
-        buyResult = await yobitClient.createOrder(currencyPair, 'limit', 'buy', amount, cheapestOrderPrice);
-    } else {
-        throw new Error(`No selling orders with for price ${ buyPrice } and amount ${amount}`);
-    }
-
+    let buyResult = await yobitClient.createOrder(currencyPair, 'limit', 'buy', amount, cheapestOrderPrice);
     console.log(buyResult);
 
-    await sleep(1000);
+    let order = await yobitClient.fetchOrder(buyResult.id);
+    while (order.remaining != 0) {
+        try {
+            order = await yobitClient.fetchOrder(buyResult.id);
+        } catch (err) {
+            console.log(err);
+        }
 
-    let sellAmount = parseFloat(buyResult.return.received);
+        await sleep(1000);
+    }
 
-    console.log(`Selling... price: ${sellPrice}`);
+    let sellAmount = order.amount;
     let sellPrice = ((100 + sellAtPercentIncrease) * ticker.last) / 100;
 
-    let sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', sellAmount, sellPrice);
+    orderBooks = await yobitClient.fetchOrderBook(currencyPair);
 
-    console.log(sellResult);
+    let fittingBuyingOrders = [];
+    while (fittingBuyingOrders.length == 0) {
+        try {
+            fittingBuyingOrders =
+                        orderBooks.bids
+                        .filter(buyingOrder => buyingOrder[0] >= sellPrice && buyingOrder[1] >= amount)
+                        .map(buyingOrder => buyingOrder[0]);
+
+            await sleep(1000);
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+
+    let highestOrderPrice = Math.max(...fittingSellingOrders);
+
+    let sellResult;
+    while (true) {
+        try {
+            console.log(`Selling... price: ${highestOrderPrice}`);
+            sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', sellAmount, highestOrderPrice);
+            await sleep(1000);
+            if(sellResult.remaining == 0) break;
+
+            console.log(sellResult);
+        } catch (err) {
+            console.log(err);
+        }
+    }
 
     res.json(sellResult.funds);
 }));
