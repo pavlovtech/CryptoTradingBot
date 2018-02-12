@@ -65,10 +65,8 @@ app.post('/orders-cancellation', asyncMiddleware(async (req, res) => {
 
     let responses = [];
     orders.forEach(async element => {
-        responses += await yobitClient.cancelOrder(element.id);
+        await yobitClient.cancelOrder(element.id);
     });
-
-    res.json(responses);
 }));
 
 app.get('/ticker/:currency_pair',  asyncMiddleware(async (req, res) => {
@@ -149,20 +147,25 @@ app.post('/commands/buy-and-sell', asyncMiddleware(async (req, res) => {
 }));
 
 app.use(function (err, req, res, next) {
-    console.error(err);
+    try {
+        console.error(err);
 
-    if (err.statusCode) {
-        console.error(err.statusCode);
+        if (err.statusCode) {
+            console.error(err.statusCode);
 
-        if (err.statusCode == 500) {
-            res.status(500).send(err);
+            if (err.statusCode == 500) {
+                res.status(500).send(err);
+            }
         }
+    
+        let rawStr = err.message;
+        let jsonParsed = rawStr.substring(rawStr.indexOf('{'), rawStr.indexOf('}') + 1);
+        let message = JSON.parse(jsonParsed);
+        res.status(500).send(message.error);
+    } catch (ex) {
+        res.status(500).send(err);
     }
-
-    let rawStr = err.message;
-    let jsonParsed = rawStr.substring(rawStr.indexOf('{'), rawStr.indexOf('}') + 1);
-    let message = JSON.parse(jsonParsed);
-    res.status(500).send(message.error);
+    
 });
 
 
