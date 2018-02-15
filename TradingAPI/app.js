@@ -91,13 +91,20 @@ app.get('/balances', asyncMiddleware(async (req, res) => {
 app.post('/commands/buy-and-sell', asyncMiddleware(async (req, res) => {
     let buyAtPercentIncrease = parseFloat(req.body.buyAtPercentIncrease);
     let amount = parseFloat(req.body.amount);
+
+    amount = amount * (1 - 10 / 100); // decrese the amount by 10% just to be on the safe side
+
     let sellAtPercentIncrease = parseFloat(req.body.sellAtPercentIncrease);
     let currencyPair = req.body.currencyPair; //.replace('_', '/').toUpperCase();;
 
     let ticker = await yobitClient.fetchTicker(currencyPair);
     let buyPrice = ((100 + buyAtPercentIncrease) * ticker.ask) / 100;
 
-    let orderBooks = await yobitClient.fetchOrderBook(currencyPair);
+    let orderBooks;
+
+    await doWithRetry(async () => {
+        orderBooks = await yobitClient.fetchOrderBook(currencyPair);
+    });
 
     let fittingSellingOrders =
         orderBooks.asks
@@ -111,7 +118,12 @@ app.post('/commands/buy-and-sell', asyncMiddleware(async (req, res) => {
     let cheapestOrderPrice = Math.min(...fittingSellingOrders);
 
     console.log(`Buying... price: ${cheapestOrderPrice}`);
-    let buyResult = await yobitClient.createOrder(currencyPair, 'limit', 'buy', amount, cheapestOrderPrice);
+    
+    let buyResult;
+    await doWithRetry(async () => {
+        buyResult = await yobitClient.createOrder(currencyPair, 'limit', 'buy', amount, cheapestOrderPrice);
+    });
+
     console.log(buyResult);
 
     while (true) {
@@ -130,17 +142,9 @@ app.post('/commands/buy-and-sell', asyncMiddleware(async (req, res) => {
 
     console.log(`Selling... price: ${sellPrice}`);
 
-    let sellResult;
-    while (true) {
-        try {
-            sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', sellAmount, sellPrice);
-            break;
-        } catch (err) {
-            console.log(err);
-        }
-
-        await sleep(1000);
-    }
+    await doWithRetry(async () => {
+        sellResult = await yobitClient.createOrder(currencyPair, 'limit', 'sell', sellAmount, sellPrice);
+    });
 
     console.log(sellResult);
     res.json(sellResult.funds);
@@ -168,13 +172,26 @@ app.use(function (err, req, res, next) {
     
 });
 
-
-function sleep(ms) {
-    return new Promise(resolve => {
-        setTimeout(resolve, ms);
-    });
-}
-
 app.listen(3000, () => {
     console.log('Server started...');
 });
+
+function wait (timeout) {
+    return new Promise((resolve) => {
+      setTimeout(() =>  resolve(), timeout)
+    })
+}
+  
+async function doWithRetry (callback) {
+    const MAX_RETRIES = 3;
+    for (let i = 0; i <= MAX_RETRIES; i++) {
+      try {
+        return await callback();
+      } catch (err) {
+        const timeout = Math.pow(2, i);
+        console.log('Waiting', timeout, 'ms');
+        await wait(timeout);
+        console.log('Retrying', err.message, i);
+      }
+    }
+}
